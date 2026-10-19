@@ -1,0 +1,108 @@
+{
+  "version": "1.0",
+  "frozen_date": "2026-09-10",
+  "source_data_directory": "/content/drive/MyDrive/Glioma data",
+  "workspace": "/content/drive/MyDrive/HLP_Atlas_Workspace/v1.0",
+  "datasets": {
+    "GLASS_GBM": {
+      "expression": "core_mrna.parquet",
+      "clinical": "core_clin2.parquet",
+      "survival": "core_ttr.parquet",
+      "longitudinal": true,
+      "modalities": [
+        "mRNA"
+      ],
+      "model": "MEFISTO",
+      "preprocessing": {
+        "log_transform": "NOT_APPLIED",
+        "log_transform_justification": "Source matrix is already on a standardised scale (median per-gene std = 0.993). Applying log2(TPM+1) would be invalid.",
+        "duplicate_gene_handling": "collapse by mean before selection",
+        "n_duplicate_rows_collapsed": 5,
+        "gene_filtering": "drop all-NaN, constant, extreme-negative; keep top 5000 by variance",
+        "dropped_genes": {
+          "all_nan": 487,
+          "constant_value": 24,
+          "extreme_negative": 9,
+          "total_dropped": 520
+        },
+        "standardisation": "z-score per gene across samples",
+        "n_genes_input_raw": 35438,
+        "n_genes_after_collapse": 35433,
+        "n_genes_clean": 34913,
+        "n_genes_selected": 5000
+      },
+      "preprocessing_verified_at": "2026-09-10T21:02:16.764975+00:00"
+    },
+    "TCGA": {
+      "cohorts": [
+        "BLCA",
+        "BRCA",
+        "COAD",
+        "KIRC",
+        "LIHC",
+        "LUAD",
+        "OV",
+        "PAAD",
+        "PRAD",
+        "SKCM",
+        "STAD",
+        "UCEC"
+      ],
+      "expression_pattern": "TCGA_{cohort}_expression.parquet",
+      "survival_pattern": "TCGA_{cohort}_survival.parquet",
+      "longitudinal": false,
+      "modalities": [
+        "mRNA"
+      ],
+      "model": "SINGLE_VIEW_PCA"
+    }
+  },
+  "preprocessing": {
+    "log_transform": "log2(TPM + 1)",
+    "gene_filtering": "top 5000 most variable genes per cohort",
+    "gene_harmonisation": "ENSG -> HGNC via ensg_to_hugo.json",
+    "standardisation": "z-score per gene"
+  },
+  "discovery": {
+    "n_components": 30,
+    "random_state": 42,
+    "model_single_view": "SINGLE_VIEW_PCA",
+    "model_architecture": "BAYESIAN_SINGLE_VIEW"
+  },
+  "programme_extraction": {
+    "top_positive_genes": 100,
+    "top_negative_genes": 100
+  },
+  "annotation": {
+    "method": "preranked_gsea",
+    "gene_sets": [
+      "MSigDB_Hallmark_2020",
+      "GO_Biological_Process_2023",
+      "KEGG_2021_Human",
+      "Reactome_2022",
+      "WikiPathway_2023_Human"
+    ],
+    "min_size": 10,
+    "max_size": 500,
+    "permutations": 1000,
+    "fdr_threshold": 0.05
+  },
+  "validation": {
+    "bootstrap_n": 30,
+    "jaccard_threshold": 0.5,
+    "clinical_standardisation": "z-score per factor within cohort",
+    "clinical_multiple_testing": "BH-FDR within cohort",
+    "technical_covariates": [
+      "library_size_log",
+      "detection_rate",
+      "ribosomal_fraction",
+      "mitochondrial_fraction"
+    ],
+    "technical_rule": "flag if |rho| > 0.3 AND p < 0.01"
+  },
+  "cross_cancer": {
+    "similarity": "cosine",
+    "clustering": "average_linkage",
+    "cluster_selection": "silhouette"
+  }
+}
